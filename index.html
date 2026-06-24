@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Venture Lens — Question Generator</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:    #1C2333;
+      --navy-mid:#252E42;
+      --navy-light:#2E3A52;
+      --gold:    #C9A84C;
+      --gold-dim:#8C6F2E;
+      --off-white:#F0EDE6;
+      --muted:   #9BAABF;
+      --text:    #D8D3CA;
+      --danger:  #E07070;
+      --radius:  10px;
+    }
+
+    html { font-size: 16px; }
+    body {
+      background: var(--navy);
+      color: var(--off-white);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      padding: 0 0 80px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Header ── */
+    header {
+      padding: 48px 24px 32px;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+    .eyebrow {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 14px;
+    }
+    header h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(2rem, 6vw, 2.8rem);
+      line-height: 1.15;
+      color: var(--off-white);
+      margin-bottom: 14px;
+    }
+    header p {
+      font-size: 0.95rem;
+      color: var(--muted);
+      line-height: 1.65;
+      max-width: 520px;
+    }
+
+    /* ── Form card ── */
+    .card {
+      background: var(--navy-mid);
+      border: 1px solid var(--navy-light);
+      border-radius: var(--radius);
+      padding: 28px 24px;
+      max-width: 680px;
+      margin: 0 auto 28px;
+    }
+    .card-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 22px;
+    }
+
+    .field { margin-bottom: 20px; }
+    .field:last-of-type { margin-bottom: 0; }
+
+    label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      margin-bottom: 7px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      background: var(--navy);
+      border: 1px solid var(--navy-light);
+      border-radius: 6px;
+      color: var(--off-white);
+      font-family: 'Inter', sans-serif;
+      font-size: 16px; /* prevents iOS zoom */
+      padding: 11px 13px;
+      outline: none;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+    }
+    input::placeholder, textarea::placeholder { color: var(--navy-light); }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--gold);
+    }
+    textarea { resize: vertical; min-height: 90px; line-height: 1.55; }
+
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239BAABF' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 13px center;
+      padding-right: 36px;
+      cursor: pointer;
+    }
+    select option { background: var(--navy-mid); }
+
+    /* ── Button ── */
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      background: var(--gold);
+      color: #1C2333;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      border: none;
+      border-radius: 7px;
+      padding: 14px 20px;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+      margin-top: 24px;
+    }
+    .btn:hover { opacity: 0.88; }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+    /* ── Spinner ── */
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(28,35,51,0.3);
+      border-top-color: #1C2333;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Error ── */
+    .error-box {
+      background: rgba(224,112,112,0.1);
+      border: 1px solid var(--danger);
+      border-radius: 7px;
+      color: var(--danger);
+      font-size: 0.85rem;
+      padding: 13px 16px;
+      margin-top: 16px;
+      display: none;
+      line-height: 1.5;
+    }
+
+    /* ── Results ── */
+    #results { max-width: 680px; margin: 0 auto; padding: 0 0px; display: none; }
+
+    .results-header {
+      padding: 0 0px 20px;
+      border-bottom: 1px solid var(--navy-light);
+      margin-bottom: 28px;
+    }
+    .results-header h2 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.45rem;
+      color: var(--off-white);
+      margin-bottom: 6px;
+    }
+    .results-header p {
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .q-group { margin-bottom: 32px; }
+    .q-group-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 14px;
+    }
+
+    .q-card {
+      background: var(--navy-mid);
+      border: 1px solid var(--navy-light);
+      border-left: 3px solid var(--gold);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      margin-bottom: 10px;
+      font-size: 0.92rem;
+      color: var(--off-white);
+      line-height: 1.6;
+      animation: fadeUp 0.35s ease both;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .reset-btn {
+      background: transparent;
+      border: 1px solid var(--navy-light);
+      color: var(--muted);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 500;
+      border-radius: 6px;
+      padding: 9px 16px;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .reset-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+    /* ── Divider ── */
+    hr { border: none; border-top: 1px solid var(--navy-light); margin: 32px 0; }
+
+    /* ── Responsive ── */
+    @media (max-width: 480px) {
+      header { padding: 36px 16px 24px; }
+      .card { margin: 0 16px 24px; padding: 22px 16px; }
+      #results { padding: 0 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">Venture Lens</p>
+  <h1>The questions you need before the meeting.</h1>
+  <p>Tell us about your venture and who you're meeting. We'll surface the questions worth asking — yourself and them — so you walk in prepared.</p>
+</header>
+
+<div class="card">
+  <p class="card-title">Your Context</p>
+
+  <div class="field">
+    <label for="venture">What's the venture or idea?</label>
+    <textarea id="venture" placeholder="e.g. A subscription meal-prep service targeting busy professionals in Vancouver — exploring a partnership with a local supplier."></textarea>
+  </div>
+
+  <div class="field">
+    <label for="stage">What stage are you at?</label>
+    <select id="stage">
+      <option value="">Select a stage…</option>
+      <option value="early_idea">Early idea — still exploring</option>
+      <option value="early_conversations">Having early conversations</option>
+      <option value="ready_to_commit">Getting close to committing</option>
+      <option value="already_started">Already started, evaluating next steps</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label for="meeting_with">Who are you meeting or working with?</label>
+    <select id="meeting_with">
+      <option value="">Select a role…</option>
+      <option value="potential_partner">Potential business partner</option>
+      <option value="co_founder">Potential co-founder</option>
+      <option value="investor">Investor or funder</option>
+      <option value="supplier">Supplier or vendor</option>
+      <option value="client">Potential client or customer</option>
+      <option value="mentor">Mentor or advisor</option>
+      <option value="myself">Myself — thinking it through alone</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label for="uncertainty">What are you most uncertain or worried about?</label>
+    <textarea id="uncertainty" placeholder="e.g. Whether there's a real market for this, whether I can trust this person, whether I'm the right one to do it…"></textarea>
+  </div>
+
+  <button class="btn" id="generateBtn" onclick="generateQuestions()">
+    <span id="btnText">Generate My Questions</span>
+    <div class="spinner" id="spinner"></div>
+  </button>
+  <div class="error-box" id="errorBox"></div>
+</div>
+
+<div id="results">
+  <div class="results-header">
+    <h2>Your Question Set</h2>
+    <p>Questions to sit with before — and to ask in the room.</p>
+  </div>
+  <div id="questionsContainer"></div>
+  <button class="reset-btn" onclick="resetForm()">← Start over</button>
+</div>
+
+<script>
+  const API_ENDPOINT = '/api/chat'; // Cloudflare Worker endpoint
+
+  async function generateQuestions() {
+    const venture     = document.getElementById('venture').value.trim();
+    const stage       = document.getElementById('stage').value;
+    const meetingWith = document.getElementById('meeting_with').value;
+    const uncertainty = document.getElementById('uncertainty').value.trim();
+
+    const errorBox = document.getElementById('errorBox');
+    errorBox.style.display = 'none';
+
+    if (!venture || !stage || !meetingWith) {
+      errorBox.textContent = 'Please fill in the first three fields before generating.';
+      errorBox.style.display = 'block';
+      return;
+    }
+
+    const btn = document.getElementById('generateBtn');
+    const btnText = document.getElementById('btnText');
+    const spinner = document.getElementById('spinner');
+
+    btn.disabled = true;
+    btnText.textContent = 'Thinking…';
+    spinner.style.display = 'block';
+
+    const stageLabels = {
+      early_idea: 'early idea stage — still exploring',
+      early_conversations: 'early conversations stage',
+      ready_to_commit: 'getting close to committing',
+      already_started: 'already started and evaluating next steps'
+    };
+    const meetingLabels = {
+      potential_partner: 'a potential business partner',
+      co_founder: 'a potential co-founder',
+      investor: 'an investor or funder',
+      supplier: 'a supplier or vendor',
+      client: 'a potential client or customer',
+      mentor: 'a mentor or advisor',
+      myself: 'themselves — thinking it through alone'
+    };
+
+    const prompt = `You are a sharp, experienced business advisor and strategic thinking partner. Your job is to generate a set of high-quality, pointed questions for someone who is preparing for an important conversation or decision about a venture.
+
+Context about the user:
+- Venture/idea: ${venture}
+- Stage: ${stageLabels[stage]}
+- Meeting with: ${meetingLabels[meetingWith]}
+- Their main uncertainty or worry: ${uncertainty || 'Not specified'}
+
+Generate a focused set of questions organized into exactly these three categories:
+
+1. QUESTIONS TO ASK YOURSELF — Internal reflection questions to examine assumptions, motivations, readiness, and blind spots before the meeting. These should be honest and sometimes uncomfortable.
+
+2. QUESTIONS TO ASK THEM — Direct questions to ask the other person (or to use as a framework if meeting with themselves). Tailored to who they're meeting.
+
+3. QUESTIONS ABOUT FIT & RISK — Questions about alignment, downside scenarios, values fit, and what happens if things go wrong.
+
+Rules:
+- Generate 4–6 questions per category (so 12–18 total)
+- Make them specific to the context provided, not generic
+- Questions should provoke genuine thinking, not just confirm what the person already believes
+- Write in plain, direct language — no jargon
+- Do NOT number the questions
+- Do NOT add preamble or closing remarks
+- Respond ONLY in this exact JSON format, with no markdown, no backticks, no explanation outside the JSON:
+{
+  "self": ["question", "question", ...],
+  "them": ["question", "question", ...],
+  "fit_risk": ["question", "question", ...]
+}`;
+
+    try {
+      const response = await fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1500,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      if (!response.ok) {
+        const err = await response.text();
+        throw new Error(`API error ${response.status}: ${err}`);
+      }
+
+      const data = await response.json();
+      const rawText = data.content
+        .filter(b => b.type === 'text')
+        .map(b => b.text)
+        .join('');
+
+      let parsed;
+      try {
+        const clean = rawText.replace(/```json|```/g, '').trim();
+        parsed = JSON.parse(clean);
+      } catch {
+        throw new Error('Unexpected response format. Please try again.');
+      }
+
+      renderQuestions(parsed);
+
+    } catch (err) {
+      errorBox.textContent = err.message || 'Something went wrong. Please try again.';
+      errorBox.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btnText.textContent = 'Generate My Questions';
+      spinner.style.display = 'none';
+    }
+  }
+
+  function renderQuestions(data) {
+    const container = document.getElementById('questionsContainer');
+    container.innerHTML = '';
+
+    const groups = [
+      { key: 'self',     label: 'Questions to ask yourself' },
+      { key: 'them',     label: 'Questions to ask them' },
+      { key: 'fit_risk', label: 'Questions about fit & risk' }
+    ];
+
+    groups.forEach(({ key, label }, gi) => {
+      const questions = data[key];
+      if (!questions || !questions.length) return;
+
+      const group = document.createElement('div');
+      group.className = 'q-group';
+
+      const groupLabel = document.createElement('p');
+      groupLabel.className = 'q-group-label';
+      groupLabel.textContent = label;
+      group.appendChild(groupLabel);
+
+      questions.forEach((q, i) => {
+        const card = document.createElement('div');
+        card.className = 'q-card';
+        card.style.animationDelay = `${(gi * questions.length + i) * 0.05}s`;
+        card.textContent = q;
+        group.appendChild(card);
+      });
+
+      container.appendChild(group);
+    });
+
+    document.getElementById('results').style.display = 'block';
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function resetForm() {
+    document.getElementById('venture').value = '';
+    document.getElementById('stage').value = '';
+    document.getElementById('meeting_with').value = '';
+    document.getElementById('uncertainty').value = '';
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('errorBox').style.display = 'none';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+</script>
+
+</body>
+</html>
